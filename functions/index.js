@@ -33,7 +33,7 @@ const SpotifyWebApi = require('spotify-web-api-node');
 const Spotify = new SpotifyWebApi({
   clientId: 'c30c23b0b465435cb5bc577893364c03', //functions.config().spotify.client_id,
   clientSecret: '656234bdde754fbe8119817c24d5946d',//functions.config().spotify.client_secret,
-  redirectUri: 'http://localhost:5000/popup.html',//`https://${process.env.GCLOUD_PROJECT}.firebaseapp.com/popup.html`,
+  redirectUri: `https://${process.env.GCLOUD_PROJECT}.firebaseapp.com/popup.html`,
 });
 
 // Scopes to request.
@@ -49,7 +49,6 @@ exports.redirect = functions.https.onRequest((req, res) => {
     console.log('Setting verification state:', state);
     res.cookie('state', state.toString(), {maxAge: 3600000, secure: true, httpOnly: true});
     const authorizeURL = Spotify.createAuthorizeURL(OAUTH_SCOPES, state.toString());
-    console.log('authorizeURL: ' + authorizeURL);
     res.redirect(authorizeURL);
   });
 });

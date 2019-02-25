@@ -39,7 +39,6 @@ function Demo() {
 
 // Triggered on Firebase auth state change.
 Demo.prototype.onAuthStateChanged = function(user) {
-  console.log(user);
   if (user) {
     this.nameContainer.innerText = user.displayName;
     this.emailContainer.innerText = user.email;
