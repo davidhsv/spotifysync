@@ -15,6 +15,9 @@
  */
 'use strict';
 
+var interval;
+var currentlyPlaying;
+
 // Initializes the Demo.
 function Demo() {
   document.addEventListener('DOMContentLoaded', function() {
@@ -34,7 +37,53 @@ function Demo() {
     this.signOutButton.addEventListener('click', this.signOut.bind(this));
     this.deleteButton.addEventListener('click', this.deleteAccount.bind(this));
     firebase.auth().onAuthStateChanged(this.onAuthStateChanged.bind(this));
+
+    interval = setInterval(this.checkMusicPlaying.bind(this), 3000);
   }.bind(this));
+}
+
+Demo.prototype.checkMusicPlaying = async function() {
+
+  var api = new SpotifyWebApi();
+  //admin.auth().token console.log(admin.auth()) procurar token spotify:davidhsvgo
+  console.log('aquiiiii');
+  
+  console.log(firebase.auth());
+
+  var snap = await firebase.database().ref('/spotifyAccessToken/' + firebase.auth().currentUser.uid).once('value');
+  var access_token = snap.val();
+
+  api.setAccessToken(access_token);
+  api.getMyCurrentPlayingTrack(async function(err, data) {
+    if (err) console.error(err);
+    else console.log(data);
+
+    if (data && data.is_playing) {
+      currentlyPlaying = {
+        "position_ms" : data.progress_ms,
+        "uris" : [data.item.uri]
+      };
+    }
+
+    snap = await firebase.database().ref('/musica-sala').once('value');
+    var musicaSala = snap.val();
+
+    var minhaMusicaNovinha = currentlyPlaying && currentlyPlaying.position_ms < 5000;
+
+    if (minhaMusicaNovinha) {
+      firebase.database().ref('/musica-sala').set({position_ms: currentlyPlaying.position_ms, uri: currentlyPlaying.uris[0]});
+    } else if (!currentlyPlaying || (musicaSala.uri && musicaSala.uri !== currentlyPlaying.uris[0])) { // || Math.abs(musicaSala.position_ms - currentlyPlaying.position_ms) > 3000
+      api.play({
+        "position_ms" : musicaSala.position_ms,
+          "uris" : [musicaSala.uri]
+        }, function(err, data) {
+        if (err) console.error(err);
+        else console.log(data);
+      });
+    }
+
+  });
+
 }
 
 // Triggered on Firebase auth state change.
@@ -46,9 +95,12 @@ Demo.prototype.onAuthStateChanged = function(user) {
     this.profilePic.src = user.photoURL;
     this.signedOutCard.style.display = 'none';
     this.signedInCard.style.display = 'block';
+    //this.checkMusicPlaying();
   } else {
     this.signedOutCard.style.display = 'block';
     this.signedInCard.style.display = 'none';
+
+    //clearInterval(interval);
   }
 };
 
